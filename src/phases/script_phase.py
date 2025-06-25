@@ -1,7 +1,9 @@
 import os
 from typing import List
+
 import google.generativeai as genai
-from ..utils import setup_logger, Config
+
+from ..utils import Config, setup_logger
 
 logger = setup_logger(__name__)
 
@@ -42,9 +44,9 @@ class ScriptPhase:
         prompt = f"""以下のテキストを、ポッドキャストで一人が話すための台本に書き直してください。
 
 要件:
-1. 簡潔に：元のテキストの2-3倍以内の長さに収める
+1. 簡潔に：元のテキストを要約し、重要なポイントを話す
 2. 元の内容に忠実に：創作や装飾的な要素を追加しない
-3. 話し言葉で自然に：「です・ます」調で聞きやすく
+3. 最大5分程度の長さに収める
 4. トーンは「{style}」に
 5. 導入と締めは最小限に（1-2文程度）
 6. 冗長な繋ぎ言葉（「さて」「えーと」など）は控えめに
@@ -53,11 +55,12 @@ class ScriptPhase:
 - ポッドキャスト名などを創作しない
 - 過度な挨拶や感嘆詞を避ける
 - 元のテキストの構成を尊重する
+- 台本の内容のみを直接出力し、前置きや説明、「台本開始」「台本終了」などのマーカーは一切含めないでください
 
 テキスト:
 {text}
 
-台本:"""
+以下の形式で台本の内容のみを直接出力してください："""
         
         try:
             response = self.model.generate_content(prompt)

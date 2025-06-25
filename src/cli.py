@@ -56,16 +56,16 @@ def input(ctx, pdf, text, start, end, output_dir):
 
 @cli.command()
 @click.option('--infile', default='output/input_text.txt', help='Input text file')
-@click.option('--chunk-size', default=1400, help='Target chunk size in characters')
+@click.option('--target-minutes', default=5, help='Target minutes per chunk for audio')
 @click.option('--output-dir', default='output/chunks', help='Output directory')
 @click.pass_context
-def split(ctx, infile, chunk_size, output_dir):
+def split(ctx, infile, target_minutes, output_dir):
     """Phase 2: Split content into chunks"""
     config = ctx.obj['config']
     phase = SplitPhase(config, output_dir)
     
     try:
-        output_paths = phase.process(infile, chunk_size)
+        output_paths = phase.process(infile, target_minutes)
         click.echo(f"✓ Content split into {len(output_paths)} chunks")
         for path in output_paths:
             click.echo(f"  - {path}")
@@ -132,10 +132,10 @@ def synthesize(ctx, indir, voice, voice_style, output_dir):
 @click.option('--end', type=int, help='End page for PDF')
 @click.option('--voice', help='Voice name')
 @click.option('--voice-style', help='Voice style')
-@click.option('--chunk-size', default=1400, help='Target chunk size')
+@click.option('--target-minutes', default=5, help='Target minutes per chunk')
 @click.option('--script-style', default='親しみやすく', help='Script style')
 @click.pass_context
-def all(ctx, pdf, text, start, end, voice, voice_style, chunk_size, script_style):
+def all(ctx, pdf, text, start, end, voice, voice_style, target_minutes, script_style):
     """Run all phases sequentially"""
     if not pdf and not text:
         click.echo("Error: Please provide either --pdf or --text file")
@@ -158,7 +158,7 @@ def all(ctx, pdf, text, start, end, voice, voice_style, chunk_size, script_style
     click.echo("\n=== Phase 2: Content Splitting ===")
     split_phase = SplitPhase(config)
     try:
-        chunk_files = split_phase.process(input_file, chunk_size)
+        chunk_files = split_phase.process(input_file, target_minutes)
         click.echo(f"✓ Split into {len(chunk_files)} chunks")
     except Exception as e:
         click.echo(f"✗ Split phase failed: {e}")

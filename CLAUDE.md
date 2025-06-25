@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 応答のルール
+- 常に日本語で応答してください。コード部分はそのままにしてください。
+
+## **MUST** 思考のルール
+- 思考する際は英語で考えてください
+
 ## Project Overview
 PDF to Podcast Audio Generator - A Python CLI tool that converts PDF documents or text files into podcast-style audio narrations using Google's Generative AI (Gemini) API.
 
@@ -28,12 +34,12 @@ python main.py all --pdf document.pdf
 
 # Run individual phases
 python main.py input --pdf document.pdf --start 10 --end 20
-python main.py split --infile output/input_text.txt
+python main.py split --infile output/input_text.txt --target-minutes 5
 python main.py script --indir output/chunks
 python main.py synthesize --indir output/scripts
 
 # With custom options
-python main.py all --pdf document.pdf --voice "Aoede" --voice-style "calm" --chunk-size 2000
+python main.py all --pdf document.pdf --voice "Aoede" --voice-style "calm" --target-minutes 3
 ```
 
 ### Testing
@@ -52,10 +58,10 @@ python main.py input --pdf sample.pdf --start 1 --end 2 --output-dir test/output
 
 #### Phase 2: Split Phase Testing
 ```bash
-# Use pre-created test_long.txt (contains ~1000 characters with 4 chapters)
-python main.py input --text test/input/test_long.txt --output-dir test/output
-python main.py split --infile test/output/input_text.txt --chunk-size 250 --output-dir test/output/chunks
-# Check outputs: ls -la test/output/chunks/
+# Use pre-created test file or output/input_middle_text.txt for testing
+python main.py split --infile output/input_middle_text.txt --target-minutes 5
+# Check outputs: ls -la output/chunks/
+# Check metadata: cat output/chunks/chunk_*_meta.json
 ```
 
 #### Phase 3: Script Phase Testing
@@ -91,10 +97,11 @@ The application follows a 4-phase pipeline, each phase can be run independently:
    - Output: `output/input_text.txt`
 
 2. **SplitPhase** (`src/phases/split_phase.py`)
-   - Splits long content into manageable chunks using Gemini API
-   - Uses LLM to find natural breaking points (chapters, sections)
-   - Target: ~4 minutes of audio per chunk
-   - Output: `output/chunks/chunk_*.txt`
+   - Splits long content into logical sections using Gemini API
+   - Each chunk is 600-1200 characters for optimal audio length
+   - Preserves semantic coherence - never splits in mid-sentence
+   - Target: configurable minutes of audio per chunk (default 5 minutes)
+   - Output: `output/chunks/chunk_*.txt` and `chunk_*_meta.json`
 
 3. **ScriptPhase** (`src/phases/script_phase.py`)
    - Converts each text chunk into conversational podcast script
@@ -118,12 +125,13 @@ The application follows a 4-phase pipeline, each phase can be run independently:
 ### Directory Structure
 ```
 output/
-├── input_text.txt       # Extracted text
-├── chunks/              # Split text chunks
-│   └── chunk_*.txt
-├── scripts/             # Generated scripts
+├── input_text.txt         # Extracted text
+├── chunks/                # Split text chunks
+│   ├── chunk_*.txt       # Text content (600-1200 chars each)
+│   └── chunk_*_meta.json # Metadata (title, char count, estimated minutes)
+├── scripts/               # Generated scripts
 │   └── script_*.txt
-└── audio/               # Final audio files
+└── audio/                 # Final audio files
     └── output_*.mp3
 ```
 
@@ -143,12 +151,6 @@ Required in `.env`:
 - API usage should be tested with short texts to minimize costs
 - The application supports Japanese text natively
 - Error handling includes detailed logging for troubleshooting
-
-## 応答のルール
-- 常に日本語で応答してください。コード部分はそのままにしてください。
-
-## **MUST** 思考のルール
-- 思考する際は英語で考えてください
 
 ## ユーザーへの確認をお願いする時
 MANDATORY: ALWAYS ALERT ON ASKING USER FOR CONFIRMATION

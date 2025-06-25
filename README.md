@@ -48,6 +48,9 @@ python main.py all --pdf document.pdf --start 10 --end 20
 
 # テキストファイルから処理
 python main.py all --text input.txt
+
+# 各チャンクの目標読み上げ時間を指定（デフォルト5分）
+python main.py all --pdf document.pdf --target-minutes 3
 ```
 
 ### 各フェーズを個別に実行
@@ -59,7 +62,11 @@ python main.py input --pdf document.pdf
 
 2. コンテンツ分割
 ```bash
+# デフォルト設定（各チャンク約5分）
 python main.py split --infile output/input_text.txt
+
+# 各チャンクの目標読み上げ時間を3分に設定
+python main.py split --infile output/input_text.txt --target-minutes 3
 ```
 
 3. 脚本生成
@@ -75,6 +82,7 @@ python main.py synthesize --indir output/scripts
 ## 出力ファイル
 
 - `output/input_text.txt` - 抽出されたテキスト
-- `output/chunks/chunk_*.txt` - 分割されたテキスト
+- `output/chunks/chunk_*.txt` - 分割されたテキスト（各600-1200文字）
+- `output/chunks/chunk_*_meta.json` - 各チャンクのメタデータ（タイトル、文字数、推定読み上げ時間）
 - `output/scripts/script_*.txt` - 生成された脚本
 - `output/audio/{番号}_{タイトル}.mp3` - 生成された音声ファイル（タイトルは脚本内容から自動生成）

@@ -56,7 +56,7 @@ def input(ctx, pdf, text, start, end, output_dir):
 
 @cli.command()
 @click.option('--infile', default='output/input_text.txt', help='Input text file')
-@click.option('--chunk-size', default=2000, help='Target chunk size in characters')
+@click.option('--chunk-size', default=1400, help='Target chunk size in characters')
 @click.option('--output-dir', default='output/chunks', help='Output directory')
 @click.pass_context
 def split(ctx, infile, chunk_size, output_dir):
@@ -132,7 +132,7 @@ def synthesize(ctx, indir, voice, voice_style, output_dir):
 @click.option('--end', type=int, help='End page for PDF')
 @click.option('--voice', help='Voice name')
 @click.option('--voice-style', help='Voice style')
-@click.option('--chunk-size', default=2000, help='Target chunk size')
+@click.option('--chunk-size', default=1400, help='Target chunk size')
 @click.option('--script-style', default='親しみやすく', help='Script style')
 @click.pass_context
 def all(ctx, pdf, text, start, end, voice, voice_style, chunk_size, script_style):

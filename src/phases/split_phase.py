@@ -15,7 +15,7 @@ class SplitPhase:
         genai.configure(api_key=config.genai_api_key)
         self.model = genai.GenerativeModel(config.model_split)
     
-    def process(self, input_file: str, target_chunk_size: int = 2000) -> List[str]:
+    def process(self, input_file: str, target_chunk_size: int = 1400) -> List[str]:
         if not os.path.exists(input_file):
             raise FileNotFoundError(f"Input file not found: {input_file}")
         

@@ -2,6 +2,7 @@ import os
 import wave
 import struct
 import time
+import re
 from typing import List
 import google.generativeai as genai
 from google.genai import Client, types
@@ -19,6 +20,10 @@ class SynthesizePhase:
         # Initialize new client for audio generation
         self.client = Client(api_key=config.genai_api_key)
         self.model_name = config.model_tts
+        
+        # Initialize generative model for title generation
+        genai.configure(api_key=config.genai_api_key)
+        self.text_model = genai.GenerativeModel(config.model_script)
     
     def process(self, script_files: List[str], voice_name: str = None, 
                 voice_style: str = None) -> List[str]:
@@ -47,6 +52,11 @@ class SynthesizePhase:
     def _synthesize_audio(self, text: str, index: int, voice_name: str, 
                          voice_style: str) -> str:
         try:
+            # Generate title from script content
+            title = self._generate_title(text)
+            sanitized_title = self._sanitize_filename(title)
+            logger.info(f"Generated title: {title} -> {sanitized_title}")
+            
             logger.info(f"Synthesizing audio with voice: {voice_name}, style: {voice_style}")
             
             # Prepare the content with style instruction if provided
@@ -82,12 +92,12 @@ class SynthesizePhase:
                         audio_data = response.candidates[0].content.parts[0].inline_data.data
                         
                         # Save as WAV first
-                        wav_path = os.path.join(self.output_dir, f"output_{index}.wav")
+                        wav_path = os.path.join(self.output_dir, f"{index}_{sanitized_title}.wav")
                         self._save_audio_as_wav(audio_data, wav_path)
                         
                         # Convert to MP3
-                        mp3_path = os.path.join(self.output_dir, f"output_{index}.mp3")
-                        self._convert_to_mp3(wav_path, mp3_path)
+                        mp3_path = os.path.join(self.output_dir, f"{index}_{sanitized_title}.mp3")
+                        self._convert_to_mp3(wav_path, mp3_path, title)
                         
                         # Remove temporary WAV file
                         if os.path.exists(mp3_path):
@@ -110,13 +120,13 @@ class SynthesizePhase:
             logger.info("Falling back to placeholder audio")
             
             # Fallback to placeholder audio
-            mp3_path = os.path.join(self.output_dir, f"output_{index}.mp3")
+            mp3_path = os.path.join(self.output_dir, f"{index}_{sanitized_title}.mp3")
             silent_audio = AudioSegment.silent(duration=1000)
             silent_audio = silent_audio.set_channels(1)
             silent_audio = silent_audio.set_frame_rate(44100)
             silent_audio.export(mp3_path, format="mp3", bitrate="128k", 
                               tags={
-                                  'title': f'Audio {index}',
+                                  'title': title,
                                   'artist': 'PDF to Podcast Generator',
                                   'album': 'Generated Content',
                                   'comment': f'Voice: {voice_name}, Style: {voice_style[:50] if voice_style else "default"}...'
@@ -132,12 +142,12 @@ class SynthesizePhase:
             wf.setframerate(24000)  # 24kHz
             wf.writeframes(audio_data)
     
-    def _convert_to_mp3(self, wav_path: str, mp3_path: str):
+    def _convert_to_mp3(self, wav_path: str, mp3_path: str, title: str = "Podcast Audio"):
         try:
             audio = AudioSegment.from_wav(wav_path)
             audio.export(mp3_path, format="mp3", bitrate="128k",
                         tags={
-                            'title': f'Podcast Audio',
+                            'title': title,
                             'artist': 'PDF to Podcast Generator',
                             'album': 'Generated Content',
                             'genre': 'Podcast'
@@ -147,3 +157,52 @@ class SynthesizePhase:
             logger.error(f"Error converting to MP3: {e}")
             # If conversion fails, keep the WAV file
             os.rename(wav_path, mp3_path.replace('.mp3', '.wav'))
+    
+    def _generate_title(self, text: str) -> str:
+        """Generate a concise title from the script content"""
+        try:
+            prompt = f"""以下のスクリプトの内容を要約して、簡潔なタイトルを生成してください。
+
+要件:
+1. 最大20文字以内
+2. スクリプトの主要なトピックを反映
+3. ファイル名として使用可能（特殊文字を使わない）
+4. 日本語または英語
+5. タイトルのみを返す（説明文は不要）
+
+スクリプト（最初の500文字）:
+{text[:500]}
+
+タイトル:"""
+            
+            response = self.text_model.generate_content(prompt)
+            title = response.text.strip()
+            
+            # Remove quotes if present
+            title = title.strip('"').strip("'").strip('「').strip('」')
+            
+            # Limit length
+            if len(title) > 20:
+                title = title[:20]
+            
+            return title
+        
+        except Exception as e:
+            logger.error(f"Error generating title: {e}")
+            return "untitled"
+    
+    def _sanitize_filename(self, filename: str) -> str:
+        """Sanitize filename to be safe for filesystem"""
+        # Replace problematic characters
+        filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+        # Replace spaces with underscores
+        filename = filename.replace(' ', '_')
+        # Remove control characters
+        filename = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', filename)
+        # Limit length
+        if len(filename) > 50:
+            filename = filename[:50]
+        # Ensure it's not empty
+        if not filename:
+            filename = "untitled"
+        return filename

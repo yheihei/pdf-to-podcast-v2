@@ -58,4 +58,4 @@ python main.py synthesize --indir output/scripts
 - `output/input_text.txt` - 抽出されたテキスト
 - `output/chunks/chunk_*.txt` - 分割されたテキスト
 - `output/scripts/script_*.txt` - 生成された脚本
-- `output/audio/output_*.mp3` - 生成された音声ファイル
+- `output/audio/{番号}_{タイトル}.mp3` - 生成された音声ファイル（タイトルは脚本内容から自動生成）

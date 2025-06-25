@@ -26,16 +26,33 @@ sudo apt-get install ffmpeg
 
 ## 使い方
 
+各コマンドの詳細なオプションは `--help` で確認できます：
+```bash
+python main.py --help
+python main.py all --help
+python main.py input --help
+python main.py split --help
+python main.py script --help
+python main.py synthesize --help
+```
+
 ### 全フェーズを一度に実行
 ```bash
+# PDFファイル全体を処理
 python main.py all --pdf document.pdf
+
+# PDFの特定ページ範囲を指定
+python main.py all --pdf document.pdf --start 10 --end 20
+
+# テキストファイルから処理
+python main.py all --text input.txt
 ```
 
 ### 各フェーズを個別に実行
 
 1. 入力処理
 ```bash
-python main.py input --pdf document.pdf --start 10 --end 20
+python main.py input --pdf document.pdf
 ```
 
 2. コンテンツ分割
